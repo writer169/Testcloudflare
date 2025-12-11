@@ -1,15 +1,18 @@
-// Redis тест с Redis Cloud REST API
+// Redis Cloud REST API
+// Использует формат: https://redis-endpoint/command/args
 
 export async function onRequestGet(context) {
   const startTime = Date.now();
-  const { REDIS_HOST, REDIS_PORT, REDIS_PASSWORD } = context.env;
+  const { REDIS_REST_URL, REDIS_REST_TOKEN } = context.env;
 
   // Проверка наличия переменных
-  if (!REDIS_HOST || !REDIS_PASSWORD) {
+  if (!REDIS_REST_URL || !REDIS_REST_TOKEN) {
     return new Response(JSON.stringify({ 
       status: "error", 
-      message: "Missing REDIS_HOST or REDIS_PASSWORD environment variable",
-      help: "Add them in Cloudflare Pages: Settings → Functions → Environment Variables"
+      message: "Missing REDIS_REST_URL or REDIS_REST_TOKEN",
+      help: "Get these from Redis Cloud: Database → REST API section",
+      example_url: "https://redis-12345.redislabs.com",
+      example_token: "long-token-string"
     }), { 
       status: 500,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -21,17 +24,18 @@ export async function onRequestGet(context) {
   const key = url.searchParams.get('key') || 'test:key';
   const command = url.searchParams.get('cmd') || 'ping';
   const value = url.searchParams.get('value');
-  const port = REDIS_PORT || '6379';
 
   try {
-    let redisCommand = [];
-    let redisArgs = [];
+    let requestUrl;
+    let method = 'GET';
 
-    // Формируем команду Redis
+    // Формируем URL команды Redis в REST формате
     switch (command.toLowerCase()) {
+      case 'ping':
+        requestUrl = `${REDIS_REST_URL}/PING`;
+        break;
       case 'get':
-        redisCommand = 'GET';
-        redisArgs = [key];
+        requestUrl = `${REDIS_REST_URL}/GET/${encodeURIComponent(key)}`;
         break;
       case 'set':
         if (!value) {
@@ -44,67 +48,56 @@ export async function onRequestGet(context) {
             headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
           });
         }
-        redisCommand = 'SET';
-        redisArgs = [key, value];
-        break;
-      case 'keys':
-        const pattern = url.searchParams.get('pattern') || '*';
-        redisCommand = 'KEYS';
-        redisArgs = [pattern];
-        break;
-      case 'ping':
-        redisCommand = 'PING';
-        redisArgs = [];
-        break;
-      case 'info':
-        redisCommand = 'INFO';
-        redisArgs = [];
+        requestUrl = `${REDIS_REST_URL}/SET/${encodeURIComponent(key)}/${encodeURIComponent(value)}`;
         break;
       case 'del':
       case 'delete':
-        redisCommand = 'DEL';
-        redisArgs = [key];
+        requestUrl = `${REDIS_REST_URL}/DEL/${encodeURIComponent(key)}`;
         break;
       case 'exists':
-        redisCommand = 'EXISTS';
-        redisArgs = [key];
+        requestUrl = `${REDIS_REST_URL}/EXISTS/${encodeURIComponent(key)}`;
         break;
       case 'ttl':
-        redisCommand = 'TTL';
-        redisArgs = [key];
+        requestUrl = `${REDIS_REST_URL}/TTL/${encodeURIComponent(key)}`;
+        break;
+      case 'keys':
+        const pattern = url.searchParams.get('pattern') || '*';
+        requestUrl = `${REDIS_REST_URL}/KEYS/${encodeURIComponent(pattern)}`;
+        break;
+      case 'incr':
+        requestUrl = `${REDIS_REST_URL}/INCR/${encodeURIComponent(key)}`;
+        break;
+      case 'decr':
+        requestUrl = `${REDIS_REST_URL}/DECR/${encodeURIComponent(key)}`;
         break;
       default:
         return new Response(JSON.stringify({ 
           status: "error", 
           message: `Unknown command: ${command}`,
-          available: "ping, get, set, del, exists, ttl, keys, info"
+          available: "ping, get, set, del, exists, ttl, keys, incr, decr"
         }), { 
           status: 400,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
         });
     }
 
-    // Используем Redis REST API (если доступен) или прямое подключение через HTTP proxy
-    // Для Redis Cloud нужно использовать их REST API endpoint
-    const restApiUrl = `https://${REDIS_HOST}`;
-    
-    // Формируем тело запроса в формате Redis Protocol (RESP)
-    const requestBody = [redisCommand, ...redisArgs];
-    
-    const response = await fetch(restApiUrl, {
-      method: 'POST',
+    // Выполняем запрос к Redis Cloud REST API
+    const response = await fetch(requestUrl, {
+      method: method,
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${REDIS_PASSWORD}`
-      },
-      body: JSON.stringify(requestBody)
+        'Authorization': `Bearer ${REDIS_REST_TOKEN}`,
+        'Accept': 'application/json'
+      }
     });
 
     let redisData;
-    try {
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
       redisData = await response.json();
-    } catch {
-      redisData = await response.text();
+    } else {
+      const textData = await response.text();
+      redisData = { result: textData };
     }
 
     const endTime = Date.now();
@@ -116,14 +109,14 @@ export async function onRequestGet(context) {
       cold_start: latency > 500,
       ts: startTime,
       redis_status: response.ok ? "connected" : "error",
+      http_status: response.status,
       command: {
         cmd: command,
         key: key,
         value: value || null
       },
-      result: redisData,
-      http_status: response.status,
-      note: "Redis Cloud requires REST API to be enabled in database settings"
+      result: redisData.result !== undefined ? redisData.result : redisData,
+      raw_response: !response.ok ? await response.text() : null
     }), {
       headers: { 
         "Content-Type": "application/json",
@@ -137,7 +130,7 @@ export async function onRequestGet(context) {
       status: "error", 
       message: err.message,
       latency_ms: endTime - startTime,
-      help: "Make sure Redis Cloud REST API is enabled for your database"
+      help: "Check REDIS_REST_URL format (should be https://redis-xxxxx.redislabs.com) and REDIS_REST_TOKEN"
     }), { 
       status: 500,
       headers: { 
