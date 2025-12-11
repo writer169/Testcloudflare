@@ -1,73 +1,118 @@
-
 interface Env {
-  MONGODB_API_URL: string;
-  MONGODB_API_KEY: string;
-  MONGODB_DATA_SOURCE: string;
-  MONGODB_DATABASE: string;
-  MONGODB_COLLECTION: string;
+  REDIS_URL: string;
+  REDIS_TOKEN: string;
 }
 
-// Fix: Replaced 'PagesFunction<Env>' with an explicit function signature to resolve the "Cannot find name 'PagesFunction'" error
-export const onRequestGet = async (context: { env: Env }): Promise<Response> => {
+export const onRequestGet = async (context: { 
+  env: Env; 
+  request: Request 
+}): Promise<Response> => {
   const startTime = Date.now();
-  const { 
-    MONGODB_API_URL, 
-    MONGODB_API_KEY, 
-    MONGODB_DATA_SOURCE, 
-    MONGODB_DATABASE, 
-    MONGODB_COLLECTION 
-  } = context.env;
+  const { REDIS_URL, REDIS_TOKEN } = context.env;
 
   // Проверка наличия переменных
-  if (!MONGODB_API_URL || !MONGODB_API_KEY) {
+  if (!REDIS_URL || !REDIS_TOKEN) {
     return new Response(JSON.stringify({ 
       status: "error", 
-      message: "Missing environment variables on Cloudflare side." 
+      message: "Missing REDIS_URL or REDIS_TOKEN environment variable" 
     }), { 
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   }
 
+  // Получаем параметры из URL
+  const url = new URL(context.request.url);
+  const key = url.searchParams.get('key') || 'test:key';
+  const command = url.searchParams.get('cmd') || 'get';
+  const value = url.searchParams.get('value');
+
   try {
-    const dbResponse = await fetch(MONGODB_API_URL, {
-      method: 'POST',
+    let redisCommand = [];
+    let response;
+
+    // Формируем команду Redis в зависимости от параметра
+    switch (command.toLowerCase()) {
+      case 'get':
+        redisCommand = ['GET', key];
+        break;
+      case 'set':
+        if (!value) {
+          return new Response(JSON.stringify({ 
+            status: "error", 
+            message: "Value required for SET command",
+            example: "/api/test?cmd=set&key=mykey&value=myvalue"
+          }), { 
+            status: 400,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          });
+        }
+        redisCommand = ['SET', key, value];
+        break;
+      case 'keys':
+        const pattern = url.searchParams.get('pattern') || '*';
+        redisCommand = ['KEYS', pattern];
+        break;
+      case 'ping':
+        redisCommand = ['PING'];
+        break;
+      case 'info':
+        redisCommand = ['INFO'];
+        break;
+      default:
+        return new Response(JSON.stringify({ 
+          status: "error", 
+          message: `Unknown command: ${command}. Available: get, set, keys, ping, info`
+        }), { 
+          status: 400,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+    }
+
+    // Выполняем запрос к Upstash Redis REST API
+    response = await fetch(`${REDIS_URL}/${redisCommand.join('/')}`, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        'api-key': MONGODB_API_KEY,
-      },
-      body: JSON.stringify({
-        dataSource: MONGODB_DATA_SOURCE,
-        database: MONGODB_DATABASE,
-        collection: MONGODB_COLLECTION,
-        filter: {} 
-      })
+        'Authorization': `Bearer ${REDIS_TOKEN}`
+      }
     });
 
-    // Note: dbData is retrieved but the current minimal response focuses on latency and connection status
-    const dbData: any = await dbResponse.json();
+    const redisData = await response.json();
     const endTime = Date.now();
     const latency = endTime - startTime;
 
     return new Response(JSON.stringify({
-      status: "ok",
+      status: response.ok ? "ok" : "error",
       latency_ms: latency,
       cold_start: latency > 500,
       ts: startTime,
-      mongodb_status: dbResponse.status === 200 ? "connected" : "auth_error"
+      redis_status: response.ok ? "connected" : "error",
+      command: {
+        cmd: command,
+        key: key,
+        value: value || null
+      },
+      result: redisData.result !== undefined ? redisData.result : redisData,
+      error: redisData.error || null
     }), {
       headers: { 
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*" 
       }
     });
+
   } catch (err: any) {
+    const endTime = Date.now();
     return new Response(JSON.stringify({ 
       status: "error", 
-      message: err.message 
+      message: err.message,
+      latency_ms: endTime - startTime
     }), { 
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: { 
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      }
     });
   }
 };
