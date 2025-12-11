@@ -10,37 +10,40 @@ const App: React.FC = () => {
             <div className="p-2 bg-red-500/10 rounded-lg">
               <Globe className="text-red-500" size={24} />
             </div>
-            Cloudflare + Redis API
+            Cloudflare + Redis Cloud API
           </h1>
           <p className="text-slate-500 text-sm">
-            Два эндпоинта: быстрый ping и тест Redis с REST API (Upstash)
+            Два эндпоинта: быстрый ping и тест Redis Cloud (redis.io)
           </p>
         </header>
 
         <div className="grid gap-6">
-          {/* Step 0: Upstash Setup */}
+          {/* Step 0: Redis Cloud Setup */}
           <section className="bg-gradient-to-br from-red-500/5 to-orange-500/5 border border-red-500/20 rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-red-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Database size={16} /> 0. Настройка Upstash Redis
+              <Database size={16} /> 0. Настройка Redis Cloud
             </h2>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm">
                 <CheckCircle2 size={16} className="text-green-500" />
-                <span>Зарегистрируйтесь на <b className="text-white">upstash.com</b></span>
+                <span>Зарегистрируйтесь на <b className="text-white">redis.io</b> или <b className="text-white">app.redislabs.com</b></span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <CheckCircle2 size={16} className="text-green-500" />
-                <span>Создайте Redis базу (выберите регион близко к вам)</span>
+                <span>Создайте Free database (30MB бесплатно)</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <CheckCircle2 size={16} className="text-green-500" />
-                <span>Скопируйте <b className="text-white">UPSTASH_REDIS_REST_URL</b> и <b className="text-white">UPSTASH_REDIS_REST_TOKEN</b></span>
+                <span>В настройках базы включите <b className="text-white">REST API</b></span>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <CheckCircle2 size={16} className="text-green-500" />
+                <span>Скопируйте <b className="text-white">Public endpoint</b>, <b className="text-white">Port</b> и <b className="text-white">Default user password</b></span>
               </div>
             </div>
             <div className="mt-4 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
               <p className="text-xs text-slate-400">
-                ℹ️ Upstash предоставляет Redis с REST API - идеально для Cloudflare Workers. 
-                Бесплатный план: 10,000 команд в день.
+                ℹ️ Redis Cloud предоставляет 30MB бесплатно. Не забудьте включить REST API в настройках базы!
               </p>
             </div>
           </section>
@@ -68,17 +71,22 @@ const App: React.FC = () => {
               <Key size={16} className="text-blue-400" /> 2. Переменные (Settings → Functions)
             </h2>
             <div className="grid grid-cols-1 gap-2">
-              {['REDIS_URL', 'REDIS_TOKEN'].map(v => (
-                <div key={v} className="bg-black/40 p-2 px-3 rounded border border-slate-800/50 font-mono text-[11px] text-yellow-500">
-                  {v}
+              {[
+                { name: 'REDIS_HOST', example: 'redis-12345.c123.us-east-1-3.ec2.cloud.redislabs.com' },
+                { name: 'REDIS_PORT', example: '12345 (опционально, по умолчанию 6379)' },
+                { name: 'REDIS_PASSWORD', example: 'your-password-here' }
+              ].map(v => (
+                <div key={v.name} className="bg-black/40 p-3 rounded border border-slate-800/50">
+                  <div className="font-mono text-[11px] text-yellow-500 mb-1">{v.name}</div>
+                  <div className="text-[10px] text-slate-500">{v.example}</div>
                 </div>
               ))}
             </div>
             <div className="mt-4 p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg flex gap-3">
               <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
               <div className="text-[11px] text-slate-400">
-                <p className="mb-2"><b>REDIS_URL</b> - скопируйте UPSTASH_REDIS_REST_URL</p>
-                <p className="mb-2"><b>REDIS_TOKEN</b> - скопируйте UPSTASH_REDIS_REST_TOKEN</p>
+                <p className="mb-2"><b>REDIS_HOST</b> - Public endpoint из Redis Cloud (без redis:// и порта)</p>
+                <p className="mb-2"><b>REDIS_PASSWORD</b> - Default user password из Redis Cloud</p>
                 <p>Добавляйте в раздел <b>Functions</b>, после - "Retry deployment"</p>
               </div>
             </div>
@@ -110,7 +118,7 @@ const App: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Database size={14} className="text-red-400" />
-                <h3 className="text-sm font-semibold text-white">Test (с Redis)</h3>
+                <h3 className="text-sm font-semibold text-white">Test (с Redis Cloud)</h3>
               </div>
               <div className="bg-black/60 p-4 rounded-xl border border-slate-800 font-mono">
                 <div className="text-[10px] text-slate-500 mb-1">METHOD</div>
@@ -134,11 +142,11 @@ const App: React.FC = () => {
                 <div className="space-y-2 text-xs">
                   <div className="flex gap-2">
                     <code className="text-orange-400">cmd</code>
-                    <span className="text-slate-400">- команда: ping, get, set, keys, info</span>
+                    <span className="text-slate-400">- команда: ping, get, set, del, exists, ttl, keys, info</span>
                   </div>
                   <div className="flex gap-2">
                     <code className="text-orange-400">key</code>
-                    <span className="text-slate-400">- ключ для get/set</span>
+                    <span className="text-slate-400">- ключ для get/set/del/exists/ttl</span>
                   </div>
                   <div className="flex gap-2">
                     <code className="text-orange-400">value</code>
@@ -180,7 +188,7 @@ const App: React.FC = () => {
         </div>
 
         <footer className="mt-8 text-center text-xs text-slate-600">
-          <p>Redis + REST API = идеальная комбинация для Cloudflare Workers 🚀</p>
+          <p>Redis Cloud + REST API = надёжное решение для Cloudflare Workers 🚀</p>
         </footer>
       </div>
     </div>
