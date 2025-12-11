@@ -1,14 +1,14 @@
-// Redis тест с Upstash REST API
+// Redis тест с Redis Cloud REST API
 
 export async function onRequestGet(context) {
   const startTime = Date.now();
-  const { REDIS_URL, REDIS_TOKEN } = context.env;
+  const { REDIS_HOST, REDIS_PORT, REDIS_PASSWORD } = context.env;
 
   // Проверка наличия переменных
-  if (!REDIS_URL || !REDIS_TOKEN) {
+  if (!REDIS_HOST || !REDIS_PASSWORD) {
     return new Response(JSON.stringify({ 
       status: "error", 
-      message: "Missing REDIS_URL or REDIS_TOKEN environment variable",
+      message: "Missing REDIS_HOST or REDIS_PASSWORD environment variable",
       help: "Add them in Cloudflare Pages: Settings → Functions → Environment Variables"
     }), { 
       status: 500,
@@ -21,14 +21,17 @@ export async function onRequestGet(context) {
   const key = url.searchParams.get('key') || 'test:key';
   const command = url.searchParams.get('cmd') || 'ping';
   const value = url.searchParams.get('value');
+  const port = REDIS_PORT || '6379';
 
   try {
     let redisCommand = [];
+    let redisArgs = [];
 
     // Формируем команду Redis
     switch (command.toLowerCase()) {
       case 'get':
-        redisCommand = ['GET', key];
+        redisCommand = 'GET';
+        redisArgs = [key];
         break;
       case 'set':
         if (!value) {
@@ -41,27 +44,34 @@ export async function onRequestGet(context) {
             headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
           });
         }
-        redisCommand = ['SET', key, value];
+        redisCommand = 'SET';
+        redisArgs = [key, value];
         break;
       case 'keys':
         const pattern = url.searchParams.get('pattern') || '*';
-        redisCommand = ['KEYS', pattern];
+        redisCommand = 'KEYS';
+        redisArgs = [pattern];
         break;
       case 'ping':
-        redisCommand = ['PING'];
+        redisCommand = 'PING';
+        redisArgs = [];
         break;
       case 'info':
-        redisCommand = ['INFO'];
+        redisCommand = 'INFO';
+        redisArgs = [];
         break;
       case 'del':
       case 'delete':
-        redisCommand = ['DEL', key];
+        redisCommand = 'DEL';
+        redisArgs = [key];
         break;
       case 'exists':
-        redisCommand = ['EXISTS', key];
+        redisCommand = 'EXISTS';
+        redisArgs = [key];
         break;
       case 'ttl':
-        redisCommand = ['TTL', key];
+        redisCommand = 'TTL';
+        redisArgs = [key];
         break;
       default:
         return new Response(JSON.stringify({ 
@@ -74,15 +84,29 @@ export async function onRequestGet(context) {
         });
     }
 
-    // Выполняем запрос к Upstash Redis REST API
-    const response = await fetch(`${REDIS_URL}/${redisCommand.join('/')}`, {
-      method: 'GET',
+    // Используем Redis REST API (если доступен) или прямое подключение через HTTP proxy
+    // Для Redis Cloud нужно использовать их REST API endpoint
+    const restApiUrl = `https://${REDIS_HOST}`;
+    
+    // Формируем тело запроса в формате Redis Protocol (RESP)
+    const requestBody = [redisCommand, ...redisArgs];
+    
+    const response = await fetch(restApiUrl, {
+      method: 'POST',
       headers: {
-        'Authorization': `Bearer ${REDIS_TOKEN}`
-      }
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${REDIS_PASSWORD}`
+      },
+      body: JSON.stringify(requestBody)
     });
 
-    const redisData = await response.json();
+    let redisData;
+    try {
+      redisData = await response.json();
+    } catch {
+      redisData = await response.text();
+    }
+
     const endTime = Date.now();
     const latency = endTime - startTime;
 
@@ -97,8 +121,9 @@ export async function onRequestGet(context) {
         key: key,
         value: value || null
       },
-      result: redisData.result !== undefined ? redisData.result : redisData,
-      error: redisData.error || null
+      result: redisData,
+      http_status: response.status,
+      note: "Redis Cloud requires REST API to be enabled in database settings"
     }), {
       headers: { 
         "Content-Type": "application/json",
@@ -111,7 +136,8 @@ export async function onRequestGet(context) {
     return new Response(JSON.stringify({ 
       status: "error", 
       message: err.message,
-      latency_ms: endTime - startTime
+      latency_ms: endTime - startTime,
+      help: "Make sure Redis Cloud REST API is enabled for your database"
     }), { 
       status: 500,
       headers: { 
