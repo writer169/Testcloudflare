@@ -72,9 +72,8 @@ const App: React.FC = () => {
             </h2>
             <div className="grid grid-cols-1 gap-2">
               {[
-                { name: 'REDIS_HOST', example: 'redis-12345.c123.us-east-1-3.ec2.cloud.redislabs.com' },
-                { name: 'REDIS_PORT', example: '12345 (опционально, по умолчанию 6379)' },
-                { name: 'REDIS_PASSWORD', example: 'your-password-here' }
+                { name: 'REDIS_REST_URL', example: 'https://redis-12345.c123.redislabs.com' },
+                { name: 'REDIS_REST_TOKEN', example: 'ваш-токен-из-redis-cloud' }
               ].map(v => (
                 <div key={v.name} className="bg-black/40 p-3 rounded border border-slate-800/50">
                   <div className="font-mono text-[11px] text-yellow-500 mb-1">{v.name}</div>
@@ -85,8 +84,9 @@ const App: React.FC = () => {
             <div className="mt-4 p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg flex gap-3">
               <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
               <div className="text-[11px] text-slate-400">
-                <p className="mb-2"><b>REDIS_HOST</b> - Public endpoint из Redis Cloud (без redis:// и порта)</p>
-                <p className="mb-2"><b>REDIS_PASSWORD</b> - Default user password из Redis Cloud</p>
+                <p className="mb-2">В Redis Cloud перейдите: <b>Database → REST API</b></p>
+                <p className="mb-2"><b>REDIS_REST_URL</b> - REST API Endpoint (с https://)</p>
+                <p className="mb-2"><b>REDIS_REST_TOKEN</b> - REST API Token/Password</p>
                 <p>Добавляйте в раздел <b>Functions</b>, после - "Retry deployment"</p>
               </div>
             </div>
