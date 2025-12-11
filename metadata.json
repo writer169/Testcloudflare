@@ -1,0 +1,5 @@
+{
+  "name": "Cloudflare MongoDB Latency API Guide",
+  "description": "Minimal configuration guide and code for a Cloudflare Worker to test MongoDB latency.",
+  "requestFramePermissions": []
+}
