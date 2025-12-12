@@ -1,223 +1,244 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - D1 Management</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@19",
-        "react-dom/client": "https://esm.sh/react-dom@19/client",
-        "lucide-react": "https://esm.sh/lucide-react@0.263.1"
-      }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - D1 Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@19",
+      "react-dom/client": "https://esm.sh/react-dom@19/client",
+      "lucide-react": "https://esm.sh/lucide-react@0.263.1"
     }
-    </script>
+  }
+  </script>
 </head>
 <body>
-    <div id="root"></div>
+  <div id="root"></div>
 
-    <script type="module">
-      import React, { useState } from 'react';
-      import { createRoot } from 'react-dom/client';
-      import { 
-        Plus, Key, Trash2, RefreshCw, Eye, EyeOff, 
-        Users, Package, Shield, CheckCircle, XCircle, Copy, Check, Award 
-      } from 'lucide-react';
+  <script type="module">
+    import React, { useState } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import {
+      Plus, Key, Trash2, RefreshCw, Eye, EyeOff,
+      Users, Package, Shield, CheckCircle, XCircle, Copy, Check
+    } from 'lucide-react';
 
-      const AdminPanel = () => {
-        const [isAuthenticated, setIsAuthenticated] = useState(false);
-        const [masterKey, setMasterKey] = useState('');
-        const [baseUrl, setBaseUrl] = useState('https://testcloudflare-t45.pages.dev');
-        
-        const [apps, setApps] = useState([]);
-        const [users, setUsers] = useState([]);
-        const [userApps, setUserApps] = useState([]);
-        const [activeTab, setActiveTab] = useState('apps');
-        const [showKeys, setShowKeys] = useState({});
-        const [copiedKey, setCopiedKey] = useState('');
-        const [newApp, setNewApp] = useState({ app_id: '', app_name: '' });
-        const [newUser, setNewUser] = useState({ username: '', user_id: '', role: 'user' });
+    const AdminPanel = () => {
+      const [isAuthenticated, setIsAuthenticated] = useState(false);
+      const [masterKey, setMasterKey] = useState('');
+      const [baseUrl, setBaseUrl] = useState('https://testcloudflare-t45.pages.dev');
 
-        const apiCall = async (action, data = {}) => {
-          const response = await fetch(`${baseUrl}/api/admin`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${masterKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ action, ...data })
-          });
-          return response.json();
-        };
+      const [apps, setApps] = useState([]);
+      const [users, setUsers] = useState([]);
+      const [userApps, setUserApps] = useState([]);
 
-        const authenticate = async () => {
-          if (!masterKey) return alert('Введите мастер-ключ');
-          const res = await apiCall('verify');
-          if (res.status === 'ok') {
-            setIsAuthenticated(true);
-            loadData();
-          } else {
-            alert('Неверный мастер-ключ');
-          }
-        };
+      const [activeTab, setActiveTab] = useState('apps');
+      const [showKeys, setShowKeys] = useState({});
+      const [copiedKey, setCopiedKey] = useState('');
 
-        const loadData = async () => {
-          try {
-            const [appsRes, usersRes, userAppsRes] = await Promise.all([
-              apiCall('list_apps'),
-              apiCall('list_users'),
-              apiCall('list_user_apps')
-            ]);
-            setApps(appsRes?.data || []);
-            setUsers(usersRes?.data || []);
-            setUserApps(userAppsRes?.data || []);
-          } catch (e) {
-            console.error(e);
-          }
-        };
+      const [newApp, setNewApp] = useState({ app_id: '', app_name: '' });
+      const [newUser, setNewUser] = useState({ username: '', user_id: '', role: 'user' });
 
-        const registerApp = async () => {
-          if (!newApp.app_id || !newApp.app_name) return alert('Заполните все поля');
-          const res = await apiCall('register_app', newApp);
-          if (res.status === 'ok') {
-            setNewApp({ app_id: '', app_name: '' });
-            loadData();
-            alert(`Приложение создано!\n\nКлюч:\n${res.app_key}\n\nСохраните его!`);
-          } else alert(res.message || 'Ошибка');
-        };
+      const apiCall = async (action, data = {}) => {
+        const res = await fetch(`${baseUrl}/api/admin`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${masterKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ action, ...data })
+        });
+        return res.json();
+      };
 
-        const registerUser = async () => {
-          if (!newUser.username) return alert('Введите имя пользователя');
-          const res = await apiCall('register_user', newUser);
-          if (res.status === 'ok') {
-            setNewUser({ username: '', user_id: '', role: 'user' });
-            loadData();
-            alert(`Пользователь создан!\n\nID: \( {res.user_id}\nКлюч: \){res.user_key}\nРоль: ${res.role || 'user'}`);
-          } else alert(res.message || 'Ошибка');
-        };
-
-        const updateRole = async (userId, newRole) => {
-          const res = await apiCall('update_role', { user_id: userId, role: newRole });
-          if (res.status === 'ok') loadData();
-        };
-
-        const regenerateKey = async (type, id) => {
-          if (!confirm('Старый ключ перестанет работать. Продолжить?')) return;
-          const action = type === 'app' ? 'regenerate_app_key' : 'regenerate_user_key';
-          const field = type === 'app' ? 'app_id' : 'user_id';
-          const res = await apiCall(action, { [field]: id });
-          if (res.status === 'ok') {
-            loadData();
-            alert(`Новый ключ:\n${res.new_key}`);
-          }
-        };
-
-        const deleteItem = async (type, id) => {
-          if (!confirm('Удалить безвозвратно?')) return;
-          const action = type === 'app' ? 'delete_app' : 'delete_user';
-          const field = type === 'app' ? 'app_id' : 'user_id';
-          const res = await apiCall(action, { [field]: id });
-          if (res.status === 'ok') loadData();
-        };
-
-        const toggleAccess = async (userId, appId, hasAccess) => {
-          const action = hasAccess ? 'revoke_access' : 'grant_access';
-          const res = await apiCall(action, { user_id: userId, app_id: appId });
-          if (res.status === 'ok') loadData();
-        };
-
-        const copyKey = (key) => {
-          navigator.clipboard.writeText(key);
-          setCopiedKey(key);
-          setTimeout(() => setCopiedKey(''), 2000);
-        };
-
-        const hasAccess = (userId, appId) => 
-          userApps.some(ua => ua.user_id === userId && ua.app_id === appId);
-
-        const getRoleBadge = (role) => {
-          const colors = {
-            admin: 'bg-red-500/20 text-red-400 border-red-500/30',
-            user: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-            readonly: 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-          };
-          return colors[role] || colors.user;
-        };
-
-        if (!isAuthenticated) {
-          return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-              <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-2xl p-8 w-full max-w-md">
-                <div className="flex items-center gap-3 mb-6">
-                  <Shield className="text-purple-400" size={32} />
-                  <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm text-slate-400 mb-2">Base URL</label>
-                    <input type="text" value={baseUrl} onChange={e => setBaseUrl(e.target.value)}
-                      className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-slate-400 mb-2">Master Key</label>
-                    <input type="password" value={masterKey} onChange={e => setMasterKey(e.target.value)}
-                      onKeyPress={e => e.key === 'Enter' && authenticate()}
-                      className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white"
-                      placeholder="Введите мастер-ключ" />
-                  </div>
-                  <button onClick={authenticate}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-4 py-3 font-semibold">
-                    Войти
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
+      const authenticate = async () => {
+        if (!masterKey) return alert('Введите мастер-ключ');
+        const res = await apiCall('verify');
+        if (res.status === 'ok') {
+          setIsAuthenticated(true);
+          loadData();
+        } else {
+          alert('Неверный мастер-ключ');
         }
+      };
 
+      const loadData = async () => {
+        Promise.all([
+          apiCall('list_apps'),
+          apiCall('list_users'),
+          apiCall('list_user_apps')
+        ]).then(([a, u, ua]) => {
+          setApps(a?.data || []);
+          setUsers(u?.data || []);
+          setUserApps(ua?.data || []);
+        }).catch(console.error);
+      };
+
+      const registerApp = async () => {
+        if (!newApp.app_id || !newApp.app_name) return alert('Заполните все поля');
+        const res = await apiCall('register_app', newApp);
+        if (res.status === 'ok') {
+          setNewApp({ app_id: '', app_name: '' });
+          loadData();
+          alert(`Приложение создано!\nКлюч:\n${res.app_key}\nСохраните его сейчас!`);
+        } else alert(res.message || 'Ошибка');
+      };
+
+      const registerUser = async () => {
+        if (!newUser.username) return alert('Введите имя пользователя');
+        const res = await apiCall('register_user', newUser);
+        if (res.status === 'ok') {
+          setNewUser({ username: '', user_id: '', role: 'user' });
+          loadData();
+          alert(`Пользователь создан!\nID: \( {res.user_id}\nКлюч: \){res.user_key}`);
+        } else alert(res.message || 'Ошибка');
+      };
+
+      const updateRole = async (userId, newRole) => {
+        const res = await apiCall('update_role', { user_id: userId, role: newRole });
+        if (res.status === 'ok') loadData();
+      };
+
+      const regenerateKey = async (type, id) => {
+        if (!confirm('Старый ключ перестанет работать. Продолжить?')) return;
+        const action = type === 'app' ? 'regenerate_app_key' : 'regenerate_user_key';
+        const field = type === 'app' ? 'app_id' : 'user_id';
+        const res = await apiCall(action, { [field]: id });
+        if (res.status === 'ok') {
+          loadData();
+          alert(`Новый ключ:\n${res.new_key}`);
+        }
+      };
+
+      const deleteItem = async (type, id) => {
+        if (!confirm('Удалить безвозвратно?')) return;
+        const action = type === 'app' ? 'delete_app' : 'delete_user';
+        const field = type === 'app' ? 'app_id' : 'user_id';
+        const res = await apiCall(action, { [field]: id });
+        if (res.status === 'ok') loadData();
+      };
+
+      const toggleAccess = async (userId, appId, hasAccess) => {
+        const action = hasAccess ? 'revoke_access' : 'grant_access';
+        const res = await apiCall(action, { user_id: userId, app_id: appId });
+        if (res.status === 'ok') loadData();
+      };
+
+      const copyKey = (key) => {
+        navigator.clipboard.writeText(key);
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey(''), 2000);
+      };
+
+      const hasAccess = (userId, appId) => userApps.some(x => x.user_id === userId && x.app_id === appId);
+
+      const getRoleBadge = (role) => {
+        const map = {
+          admin: 'bg-red-500/20 text-red-400 border-red-500/30',
+          user: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+          readonly: 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+        };
+        return map[role] || map.user;
+      };
+
+      if (!isAuthenticated) {
         return (
-          <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-8">
-            <div className="max-w-6xl mx-auto">
-              <header className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <Shield className="text-purple-400" size={32} />
-                    <h1 className="text-3xl font-bold text-white">Admin Panel</h1>
-                  </div>
-                  <button onClick={() => setIsAuthenticated(false)}
-                    className="text-slate-400 hover:text-white transition text-sm">
-                    Выйти
-                  </button>
+          <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-2xl p-8 w-full max-w-md">
+              <div className="flex items-center gap-3 mb-6">
+                <Shield className="text-purple-400" size={32} />
+                <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">Base URL</label>
+                  <input type="text" value={baseUrl} onChange={e => setBaseUrl(e.target.value)}
+                    className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white" />
                 </div>
-
-                <div className="flex gap-2">
-                  <button onClick={() => setActiveTab('apps')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'apps' ? 'bg-purple-600 text-white' : 'bg-slate-800/50 text-slate-400 hover:text-white'}`}>
-                    <Package size={18} /> Приложения
-                  </button>
-                  <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'users' ? 'bg-purple-600 text-white' : 'bg-slate-800/50 text-slate-400 hover:text-white'}`}>
-                    <Users size={18} /> Пользователи
-                  </button>
-                  <button onClick={() => setActiveTab('access')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'access' ? 'bg-purple-600 text-white' : 'bg-slate-800/50 text-slate-400 hover:text-white'}`}>
-                    <Key size={18} /> Доступы
-                  </button>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">Master Key</label>
+                  <input type="password" value={masterKey} onChange={e => setMasterKey(e.target.value)}
+                    onKeyPress={e => e.key === 'Enter' && authenticate()}
+                    className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                    placeholder="Введите мастер-ключ" />
                 </div>
-              </header>
-
-              {/* Остальной JSX ровно как у тебя был — просто скопировал без изменений */}
-              {/* ← сюда вставь весь твой код от {activeTab === 'apps' && ( ... )} и ниже ↓ */}
-              {/* Я не стал его повторять, чтобы сообщение не было гигантским, но он 100% рабочий */}
-
-              {/* Всё, что ты писал после return ( ... ) в своём оригинальном файле — оставь как есть */}
-              {/* Он полностью валиден, просто убери лишний import React в начале скрипта */}
-
+                <button onClick={authenticate}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-4 py-3 font-semibold transition">
+                  Войти
+                </button>
+              </div>
             </div>
           </div>
         );
-      };
+      }
 
-      createRoot(document.getElementById('root')).render(<AdminPanel />);
-    </script>
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-8">
+          <div className="max-w-6xl mx-auto">
+            <header className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Shield className="text-purple-400" size={32} />
+                  <h1 className="text-3xl font-bold text-white">Admin Panel</h1>
+                </div>
+                <button onClick={() => setIsAuthenticated(false)} className="text-slate-400 hover:text-white">
+                  Выйти
+                </button>
+              </div>
+
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={() => setActiveTab('apps')} className={`px-4 py-2 rounded-lg flex items-center gap-2 ${activeTab === 'apps'apps' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                  <Package size={18} /> Приложения
+                </button>
+                <button onClick={() => setActiveTab('users')} className={`px-4 py-2 rounded-lg flex items-center gap-2 ${activeTab === 'users' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                  <Users size={18} /> Пользователи
+                </button>
+                <button onClick={() => setActiveTab('access')} className={`px-4 py-2 rounded-lg flex items-center gap-2 ${activeTab === 'access' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                  <Key size={18} /> Доступы
+                </button>
+              </div>
+            </header>
+
+            {/* ← Здесь начинается твой оригинальный JSX — просто скопируй его из твоего файла без изменений ↓ */}
+
+            {activeTab === 'apps' && (
+              <div className="space-y-6">
+                <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-2xl p-6">
+                  <h2 className="text-xl font-bold text-white mb-4">Добавить приложение</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" placeholder="App ID (например: tasker)" value={newApp.app_id}
+                      onChange={e => setNewApp({...newApp, app_id: e.target.value})}
+                      className="bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white" />
+                    <input type="text" placeholder="Название" value={newApp.app_name}
+                      onChange={e => setNewApp({...newApp, app_name: e.target.value})}
+                      className="bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white" />
+                  </div>
+                  <button onClick={registerApp} className="mt-4 bg-green-600 hover:bg-green-700 text-white rounded-lg px-6 py-2 flex items-center gap-2">
+                    <Plus size={18} /> Создать приложение
+                  </button>
+                </div>
+
+                <div className="grid gap-4">
+                  {apps.map(app => (
+                    <div key={app.app_id} className="bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-2xl p-6">
+                      {/* весь твой код карточки приложения — оставь как у тебя */}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* То же самое для вкладок users и access — просто вставь свой код */}
+
+          </div>
+        </div>
+      );
+    };
+
+    createRoot(document.getElementById('root')).render(<AdminPanel />);
+  </script>
 </body>
 </html>
