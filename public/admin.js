@@ -1,11 +1,9 @@
 // public/admin.js
 
-// ВАЖНО: Все импорты React/ReactDOM/хуков/Lucide-react удалены.
-
 // Получаем хуки из глобального объекта React
 const { useState, useEffect } = React; 
 
-// Плацхолдеры для иконок Lucide-react (замените на настоящие иконки, если решите использовать сборщик)
+// Плацхолдеры для иконок Lucide-react (использованы эмодзи вместо модульных импортов)
 const Plus = ({ size = 18, className = '' }) => <span style={{fontSize: size}} className={`align-middle ${className}`}>+</span>;
 const Key = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🔑</span>;
 const Trash2 = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🗑️</span>;
@@ -15,8 +13,8 @@ const EyeOff = ({ size = 18, className = '' }) => <span style={{fontSize: size/1
 const Users = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🧑‍💻</span>;
 const Package = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>📦</span>;
 const Shield = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🛡️</span>;
-const CheckCircle = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>✅</span>;
-const XCircle = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>❌</span>;
+const CheckCircle = ({ size = 20, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>✅</span>;
+const XCircle = ({ size = 20, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>❌</span>;
 const Copy = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>📋</span>;
 const Check = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>✔️</span>;
 const Award = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🏅</span>;
@@ -191,7 +189,7 @@ const AdminPanel = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
         <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-2xl p-8 w-full max-w-md">
           <div className="flex items-center gap-3 mb-6">
-            <Shield className="text-purple-400" size={32} />
+            <Shield size={32} className="text-purple-400" />
             <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
           </div>
           
@@ -237,7 +235,7 @@ const AdminPanel = () => {
         <header className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <Shield className="text-purple-400" size={32} />
+              <Shield size={32} className="text-purple-400" />
               <h1 className="text-3xl font-bold text-white">Admin Panel</h1>
             </div>
             <button
