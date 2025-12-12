@@ -1,8 +1,7 @@
 // public/admin.js
 
-// ИСПОЛЬЗУЕМ ДЕСТРУКТУРИЗАЦИЮ ДЛЯ ХУКОВ. 
-// Объект React будет доступен благодаря Babel/importmap.
-import { useState, useEffect } from 'react'; 
+// Явный импорт React необходим для использования хуков и функции React.createElement
+import React, { useState, useEffect } from 'react'; 
 import ReactDOM from 'react-dom/client';
 import { Plus, Key, Trash2, RefreshCw, Eye, EyeOff, Users, Package, Shield, CheckCircle, XCircle, Copy, Check, Award } from 'lucide-react';
 
@@ -528,6 +527,6 @@ const AdminPanel = () => {
   );
 };
       
-// Обратите внимание: React здесь используется без явного импорта, так как его предоставляет Babel.
+// Использование React.createElement, который теперь доступен благодаря явному импорту React.
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(AdminPanel));
