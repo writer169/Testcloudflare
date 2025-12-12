@@ -3,7 +3,7 @@
 // Получаем хуки из глобального объекта React
 const { useState, useEffect } = React; 
 
-// Плацхолдеры для иконок Lucide-react (использованы эмодзи вместо модульных импортов)
+// Плацхолдеры для иконок (использованы эмодзи)
 const Plus = ({ size = 18, className = '' }) => <span style={{fontSize: size}} className={`align-middle ${className}`}>+</span>;
 const Key = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🔑</span>;
 const Trash2 = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🗑️</span>;
@@ -12,7 +12,7 @@ const Eye = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}
 const EyeOff = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🚫</span>;
 const Users = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🧑‍💻</span>;
 const Package = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>📦</span>;
-const Shield = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🛡️</span>;
+const Shield = ({ size = 32, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🛡️</span>;
 const CheckCircle = ({ size = 20, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>✅</span>;
 const XCircle = ({ size = 20, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>❌</span>;
 const Copy = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>📋</span>;
