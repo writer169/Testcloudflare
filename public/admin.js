@@ -1,6 +1,6 @@
 // public/admin.js
 
-// Явный импорт React необходим для использования хуков и функции React.createElement
+// Явный импорт React, ReactDOM и всех хуков/компонентов
 import React, { useState, useEffect } from 'react'; 
 import ReactDOM from 'react-dom/client';
 import { Plus, Key, Trash2, RefreshCw, Eye, EyeOff, Users, Package, Shield, CheckCircle, XCircle, Copy, Check, Award } from 'lucide-react';
@@ -13,12 +13,14 @@ const AdminPanel = () => {
   const [apps, setApps] = useState([]);
   const [users, setUsers] = useState([]);
   const [userApps, setUserApps] = useState([]);
+  
   const [activeTab, setActiveTab] = useState('apps');
   const [showKeys, setShowKeys] = useState({});
   const [copiedKey, setCopiedKey] = useState('');
+  
   const [newApp, setNewApp] = useState({ app_id: '', app_name: '' });
   const [newUser, setNewUser] = useState({ username: '', user_id: '', role: 'user' });
-  
+
   const authenticate = async () => {
     if (!masterKey) {
       alert('Введите мастер-ключ');
@@ -34,6 +36,7 @@ const AdminPanel = () => {
         },
         body: JSON.stringify({ action: 'verify' })
       });
+      
       if (response.ok) {
         setIsAuthenticated(true);
         loadData();
@@ -52,6 +55,7 @@ const AdminPanel = () => {
         apiCall('list_users'),
         apiCall('list_user_apps')
       ]);
+      
       if (appsRes?.data) setApps(appsRes.data);
       if (usersRes?.data) setUsers(usersRes.data);
       if (userAppsRes?.data) setUserApps(userAppsRes.data);
@@ -69,6 +73,7 @@ const AdminPanel = () => {
       },
       body: JSON.stringify({ action, ...data })
     });
+    
     return response.json();
   };
 
@@ -87,7 +92,7 @@ const AdminPanel = () => {
       alert('Ошибка: ' + result.message);
     }
   };
-  
+
   const registerUser = async () => {
     if (!newUser.username) {
       alert('Введите имя пользователя');
@@ -114,8 +119,10 @@ const AdminPanel = () => {
 
   const regenerateKey = async (type, id) => {
     if (!confirm('Старый ключ перестанет работать. Продолжить?')) return;
+    
     const action = type === 'app' ? 'regenerate_app_key' : 'regenerate_user_key';
     const field = type === 'app' ? 'app_id' : 'user_id';
+    
     const result = await apiCall(action, { [field]: id });
     if (result.status === 'ok') {
       loadData();
@@ -125,8 +132,10 @@ const AdminPanel = () => {
 
   const deleteItem = async (type, id) => {
     if (!confirm('Удалить безвозвратно?')) return;
+    
     const action = type === 'app' ? 'delete_app' : 'delete_user';
     const field = type === 'app' ? 'app_id' : 'user_id';
+    
     const result = await apiCall(action, { [field]: id });
     if (result.status === 'ok') {
       loadData();
@@ -134,8 +143,7 @@ const AdminPanel = () => {
   };
 
   const toggleAccess = async (userId, appId, hasAccess) => {
-    const action = hasAccess ?
-      'revoke_access' : 'grant_access';
+    const action = hasAccess ? 'revoke_access' : 'grant_access';
     const result = await apiCall(action, { user_id: userId, app_id: appId });
     if (result.status === 'ok') {
       loadData();
@@ -169,7 +177,7 @@ const AdminPanel = () => {
             <Shield className="text-purple-400" size={32} />
             <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
           </div>
-  
+          
           <div className="space-y-4">
             <div>
               <label className="block text-sm text-slate-400 mb-2">Base URL</label>
@@ -228,14 +236,13 @@ const AdminPanel = () => {
               onClick={() => setActiveTab('apps')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
                 activeTab === 'apps'
-                ? 'bg-purple-600 text-white'
+                  ? 'bg-purple-600 text-white'
                   : 'bg-slate-800/50 text-slate-400 hover:text-white'
               }`}
             >
               <Package size={18} />
               Приложения
             </button>
- 
             <button
               onClick={() => setActiveTab('users')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
@@ -247,7 +254,6 @@ const AdminPanel = () => {
               <Users size={18} />
               Пользователи
             </button>
-          
             <button
               onClick={() => setActiveTab('access')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
@@ -320,28 +326,25 @@ const AdminPanel = () => {
                   <div className="bg-slate-900/50 rounded-lg p-3">
                     <div className="flex items-center justify-between gap-2">
                       <code className="text-xs text-green-400 font-mono break-all">
-                        {showKeys[app.app_id] ?
-                          app.app_key : '••••••••••••••••••••••••••••••••'}
+                        {showKeys[app.app_id] ? app.app_key : '••••••••••••••••••••••••••••••••'}
                       </code>
                       <div className="flex gap-2 shrink-0">
                         <button
                           onClick={() => setShowKeys({ ...showKeys, [app.app_id]: !showKeys[app.app_id] })}
                           className="p-1 hover:bg-slate-800 rounded transition"
                         >
-                          {showKeys[app.app_id] ?
-                            <EyeOff size={16} className="text-slate-400" /> : <Eye size={16} className="text-slate-400" />}
+                          {showKeys[app.app_id] ? <EyeOff size={16} className="text-slate-400" /> : <Eye size={16} className="text-slate-400" />}
                         </button>
                         <button
                           onClick={() => copyKey(app.app_key)}
                           className="p-1 hover:bg-slate-800 rounded transition"
                         >
-                          {copiedKey === app.app_key ?
-                            <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-slate-400" />}
+                          {copiedKey === app.app_key ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-slate-400" />}
                         </button>
                       </div>
                     </div>
                   </div>
-        
+                  
                   <p className="text-xs text-slate-500 mt-2">
                     Создано: {new Date(app.created_at).toLocaleString('ru-RU')}
                   </p>
@@ -432,28 +435,25 @@ const AdminPanel = () => {
                   <div className="bg-slate-900/50 rounded-lg p-3">
                     <div className="flex items-center justify-between gap-2">
                       <code className="text-xs text-blue-400 font-mono break-all">
-                        {showKeys[user.user_id] ?
-                          user.user_key : '••••••••••••••••••••••••••••••••'}
+                        {showKeys[user.user_id] ? user.user_key : '••••••••••••••••••••••••••••••••'}
                       </code>
                       <div className="flex gap-2 shrink-0">
                         <button
                           onClick={() => setShowKeys({ ...showKeys, [user.user_id]: !showKeys[user.user_id] })}
                           className="p-1 hover:bg-slate-800 rounded transition"
                         >
-                          {showKeys[user.user_id] ?
-                            <EyeOff size={16} className="text-slate-400" /> : <Eye size={16} className="text-slate-400" />}
+                          {showKeys[user.user_id] ? <EyeOff size={16} className="text-slate-400" /> : <Eye size={16} className="text-slate-400" />}
                         </button>
                         <button
                           onClick={() => copyKey(user.user_key)}
                           className="p-1 hover:bg-slate-800 rounded transition"
                         >
-                          {copiedKey === user.user_key ?
-                            <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-slate-400" />}
+                          {copiedKey === user.user_key ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-slate-400" />}
                         </button>
                       </div>
                     </div>
                   </div>
-        
+                  
                   <p className="text-xs text-slate-500 mt-2">
                     Создано: {new Date(user.created_at).toLocaleString('ru-RU')}
                   </p>
@@ -527,6 +527,5 @@ const AdminPanel = () => {
   );
 };
       
-// Использование React.createElement, который теперь доступен благодаря явному импорту React.
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(AdminPanel));
