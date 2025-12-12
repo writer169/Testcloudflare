@@ -1,9 +1,26 @@
 // public/admin.js
 
-// Чистый импорт: React, ReactDOM, и все компоненты.
-import React, { useState, useEffect } from 'react'; 
-import ReactDOM from 'react-dom/client';
-import { Plus, Key, Trash2, RefreshCw, Eye, EyeOff, Users, Package, Shield, CheckCircle, XCircle, Copy, Check, Award } from 'lucide-react';
+// ВАЖНО: Все импорты React/ReactDOM/хуков/Lucide-react удалены.
+
+// Получаем хуки из глобального объекта React
+const { useState, useEffect } = React; 
+
+// Плацхолдеры для иконок Lucide-react (замените на настоящие иконки, если решите использовать сборщик)
+const Plus = ({ size = 18, className = '' }) => <span style={{fontSize: size}} className={`align-middle ${className}`}>+</span>;
+const Key = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🔑</span>;
+const Trash2 = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🗑️</span>;
+const RefreshCw = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🔄</span>;
+const Eye = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>👁️</span>;
+const EyeOff = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🚫</span>;
+const Users = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🧑‍💻</span>;
+const Package = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>📦</span>;
+const Shield = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🛡️</span>;
+const CheckCircle = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>✅</span>;
+const XCircle = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>❌</span>;
+const Copy = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>📋</span>;
+const Check = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>✔️</span>;
+const Award = ({ size = 18, className = '' }) => <span style={{fontSize: size/1.5}} className={`align-middle ${className}`}>🏅</span>;
+
 
 const AdminPanel = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -527,6 +544,6 @@ const AdminPanel = () => {
   );
 };
       
-// Финальный рендеринг
+// Финальный рендеринг с использованием глобального ReactDOM
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(AdminPanel));
