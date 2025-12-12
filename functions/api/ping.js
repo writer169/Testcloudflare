@@ -1,10 +1,10 @@
-// Быстрый ping без Redis
+// Быстрый ping без базы данных
 // Просто проверка, что Worker работает
 
 export async function onRequestGet() {
   const startTime = Date.now();
   
-  // Небольшая задержка для имитации реальной работы
+  // Небольшая задержка для имитации работы
   await new Promise(resolve => setTimeout(resolve, 1));
   
   const endTime = Date.now();
