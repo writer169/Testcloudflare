@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react';
+// public/admin.js
+
+// ИСПОЛЬЗУЕМ ДЕСТРУКТУРИЗАЦИЮ ДЛЯ ХУКОВ. 
+// Объект React будет доступен благодаря Babel/importmap.
+import { useState, useEffect } from 'react'; 
 import ReactDOM from 'react-dom/client';
 import { Plus, Key, Trash2, RefreshCw, Eye, EyeOff, Users, Package, Shield, CheckCircle, XCircle, Copy, Check, Award } from 'lucide-react';
 
@@ -524,5 +528,6 @@ const AdminPanel = () => {
   );
 };
       
+// Обратите внимание: React здесь используется без явного импорта, так как его предоставляет Babel.
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(AdminPanel));
