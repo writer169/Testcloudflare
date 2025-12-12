@@ -1,6 +1,6 @@
 // public/admin.js
 
-// Явный импорт React, ReactDOM и всех хуков/компонентов
+// Чистый импорт: React, ReactDOM, и все компоненты.
 import React, { useState, useEffect } from 'react'; 
 import ReactDOM from 'react-dom/client';
 import { Plus, Key, Trash2, RefreshCw, Eye, EyeOff, Users, Package, Shield, CheckCircle, XCircle, Copy, Check, Award } from 'lucide-react';
@@ -527,5 +527,6 @@ const AdminPanel = () => {
   );
 };
       
+// Финальный рендеринг
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(AdminPanel));
