@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+const { useState, useEffect } = React;
 
 // Icon components using emoji
 const Plus = ({ size = 18 }) => <span style={{fontSize: size}}>+</span>;
@@ -17,7 +17,7 @@ const Check = ({ size = 18 }) => <span style={{fontSize: size/1.5}}>✔️</span
 const ChevronDown = ({ size = 18 }) => <span style={{fontSize: size/1.5}}>▼</span>;
 const ChevronUp = ({ size = 18 }) => <span style={{fontSize: size/1.5}}>▲</span>;
 
-export default function AdminPanel() {
+function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [masterKey, setMasterKey] = useState('');
   const [baseUrl, setBaseUrl] = useState('https://testcloudflare-t45.pages.dev');
@@ -571,3 +571,5 @@ export default function AdminPanel() {
     </div>
   );
 }
+
+export default AdminPanel;
