@@ -1,3 +1,5 @@
+// public/admin.js - Mobile Optimized Version
+
 const { useState, useEffect } = React;
 
 // Icon components using emoji
@@ -17,7 +19,7 @@ const Check = ({ size = 18 }) => <span style={{fontSize: size/1.5}}>✔️</span
 const ChevronDown = ({ size = 18 }) => <span style={{fontSize: size/1.5}}>▼</span>;
 const ChevronUp = ({ size = 18 }) => <span style={{fontSize: size/1.5}}>▲</span>;
 
-function AdminPanel() {
+const AdminPanel = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [masterKey, setMasterKey] = useState('');
   const [baseUrl, setBaseUrl] = useState('https://testcloudflare-t45.pages.dev');
@@ -570,6 +572,7 @@ function AdminPanel() {
       </div>
     </div>
   );
-}
+};
 
-export default AdminPanel;
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(AdminPanel));
