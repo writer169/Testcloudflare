@@ -143,18 +143,35 @@ export async function onRequest(context) {
           return jsonResponse({ status: "error", message: "Table name required" }, 400);
         }
         
-        // Автоматическая фильтрация по user_id
-        if (PUBLIC_TABLES.includes(table)) {
-          // Публичная таблица - все записи
-          result = await DB.prepare(`SELECT * FROM ${table}`).all();
-        } else if (user.role === 'admin') {
-          // Админ видит все
-          result = await DB.prepare(`SELECT * FROM ${table}`).all();
+        // Базовый запрос
+        let baseQuery = `SELECT * FROM ${table}`;
+        let whereClauses = [];
+        let queryParams = [];
+        
+        // Добавляем условия в зависимости от типа таблицы и роли
+        if (!PUBLIC_TABLES.includes(table) && user.role !== 'admin') {
+          // Для приватных таблиц не-админы видят только свои записи
+          whereClauses.push('user_id = ?');
+          queryParams.push(user.user_id);
+        }
+        
+        // Добавляем пользовательское условие (если передано)
+        if (sql) {
+          whereClauses.push(sql);
+        }
+        
+        // Формируем полный запрос
+        let fullQuery = baseQuery;
+        if (whereClauses.length > 0) {
+          fullQuery += ' WHERE ' + whereClauses.join(' AND ');
+        }
+        
+        // Выполняем запрос
+        const stmt = DB.prepare(fullQuery);
+        if (queryParams.length > 0) {
+          result = await stmt.bind(...queryParams).all();
         } else {
-          // Обычный пользователь - только свои записи
-          result = await DB.prepare(
-            `SELECT * FROM ${table} WHERE user_id = ?`
-          ).bind(user.user_id).all();
+          result = await stmt.all();
         }
         break;
 
@@ -266,14 +283,14 @@ export async function onRequest(context) {
           }
         }
         
-        const stmt = DB.prepare(sql);
+        const customStmt = DB.prepare(sql);
         if (params && params.length > 0) {
-          result = await stmt.bind(...params).all();
+          result = await customStmt.bind(...params).all();
         } else {
           if (sqlLower.startsWith('select') || sqlLower.startsWith('pragma')) {
-            result = await stmt.all();
+            result = await customStmt.all();
           } else {
-            result = await stmt.run();
+            result = await customStmt.run();
           }
         }
         break;
